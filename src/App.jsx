@@ -95,7 +95,6 @@
 
 import React, { useState } from "react";
 import Map, { Layer, Marker, NavigationControl, Source } from "react-map-gl";
-
 import "mapbox-gl/dist/mapbox-gl.css";
 import Room from "@mui/icons-material/Room";
 
@@ -103,6 +102,7 @@ const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const App = () => {
   const [newdestination, setNewDestination] = useState(null);
+
   const [newplace, setNewPlace] = useState({
     lat: 23.103683,
     long: 78.962883,
@@ -132,7 +132,7 @@ const App = () => {
         },
         geometry: {
           type: "LineString",
-          coordinates: [origin, destination],
+          coordinates: [origin, newdestination],
         },
       }
     : null;
