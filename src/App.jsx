@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Map, {
   GeolocateControl,
   Layer,
@@ -8,11 +8,13 @@ import Map, {
 } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import Room from "@mui/icons-material/Room";
+
 // import MapWithGeocoder from "./MapWithGeoCoder";
 
 const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const App = () => {
+  // const mapRef = useRef(null);
   const [newdestination, setNewDestination] = useState(null);
 
   // console.log("newdestination :", newdestination);
@@ -84,37 +86,34 @@ const App = () => {
     zoom: 3,
   });
 
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      console.warn("Geolocation is not supported by this browser.");
-      return;
-    }
+  // useEffect(() => {
+  //   if (!mapRef.current) return;
 
-    const watchId = navigator.geolocation.watchPosition(
-      (position) => {
-        console.log(
-          "updte",
-          position.coords.latitude,
-          position.coords.longitude
-        );
+  //   const map = mapRef.current.getMap(); // Access actual Mapbox instance
+  //   const geocoder = new MapboxGeocoder({
+  //     accessToken: TOKEN,
+  //     mapboxgl: mapboxgl,
+  //     marker: true,
+  //     placeholder: "Search for places",
+  //   });
 
-        const { latitude, longitude } = position.coords;
+  //   map.addControl(geocoder, "top-left");
 
-        setUserLocation({ lat: latitude, lng: longitude });
-      },
-      (error) => {
-        console.error("Error getting location updates:", error);
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 5000,
-      }
-    );
+  //   geocoder.on("result", (e) => {
+  //     const coords = e.result.geometry.coordinates;
+  //     console.log("Selected:", coords);
+  //     setViewPort((prev) => ({
+  //       ...prev,
+  //       longitude: coords[0],
+  //       latitude: coords[1],
+  //       zoom: 10,
+  //     }));
+  //   });
 
-    // Cleanup function
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
+  //   return () => {
+  //     map.removeControl(geocoder);
+  //   };
+  // }, []);
 
   // const origin = [72.831062, 21.17024]; //india-surat
 
@@ -141,6 +140,7 @@ const App = () => {
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <Map
+        // ref={mapRef}
         id="route"
         mapboxAccessToken={TOKEN}
         initialViewState={viewPort}
