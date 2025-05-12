@@ -13,10 +13,6 @@ const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 const App = () => {
   const [userlocation, setUserLocation] = useState(null);
   const [pathCoords, setPathCoords] = useState([]);
-  const [distance, setDistance] = useState(null);
-  const [duration, setDuration] = useState(null);
-
-  console.log("pathCoords>>>> :", pathCoords);
 
   const [viewPort, setViewPort] = useState({
     latitude: 20,
@@ -36,7 +32,6 @@ const App = () => {
 
         // Update user location
         setUserLocation({ latitude, longitude });
-
         setPathCoords((prev) => [...prev, [longitude, latitude]]);
       },
       (error) => {
@@ -100,7 +95,7 @@ const App = () => {
               type="line"
               paint={{
                 "line-color": "#3b9ddd",
-                "line-width": 6,
+                "line-width": 7,
                 "line-opacity": 0.75,
               }}
             />
