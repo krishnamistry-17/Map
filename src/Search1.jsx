@@ -1,130 +1,3 @@
-
-//>>>old location
-// import React, { useState, useEffect, useRef } from "react";
-// import mapboxgl from "mapbox-gl";
-// import ReactMapGL, { Marker } from "react-map-gl";
-
-// const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
-
-// const MapLocation = () => {
-
-//   const mapContainerRef = useRef(null);
-//   const mapRef = useRef(null);
-//   const markerRef = useRef(null);
-
-//   const [lng, setLng] = useState(72.831062);
-//   const [lat, setLat] = useState(21.17024);
-
-//   // const [routeCoords, setRouteCoords] = useState(null);
-//   // console.log("routeCoords :", routeCoords);
-
-//   useEffect(() => {
-//     if (mapContainerRef.current && mapRef.current) {
-//       const map = new mapboxgl.Map({
-//         container: mapContainerRef.current,
-//         style: "mapbox://styles/jay001/cmac3lvo600n301s45q2380v6",
-//         center: [lng, lat],
-//         zoom: 8,
-//       });
-
-//       //add marker to get map
-//       markerRef.current = new mapboxgl.Marker()
-//         .setLngLat([lng, lat])
-//         .addTo(mapRef.current);
-
-//       // Get user's current location
-//       //used navigator-> geolocation and getcurrentpostion
-//       //gelocation instance method ->  getcurrentpostion
-//       //geolocation->property-> coords
-
-//       navigator.geolocation.getCurrentPosition(
-//         (position) => {
-//           const { longitude, latitude } = position.coords;
-//           setLng(longitude);
-//           setLat(latitude);
-//           setUserLocation({ longitude, latitude });
-
-//           map.flyTo({
-//             center: [longitude, latitude],
-//             zoom: 15,
-//             duration: 2000,
-//           });
-//         },
-//         (error) => {
-//           console.error("Error getting location:", error);
-//         },
-//         {
-//           enableHighAccuracy: true, //aplication try to get best result
-//           timeout: 5000,
-//           maximumAge: 0,
-//         }
-//       );
-
-//       // Track user's location
-//       //  geolocation->property-> coords
-//       //geolocation instance mnethod -> watchpositiion
-//       const watchId = navigator.geolocation.watchPosition(
-//         (position) => {
-//           const { longitude, latitude } = position.coords;
-//           setLng(longitude);
-//           setLat(latitude);
-//           setUserLocation({ longitude, latitude });
-//           // setRouteCoords(route.geometry.coordinates); // Save the full route coordinates
-
-//           map.flyTo({
-//             center: [longitude, latitude],
-//             duration: 1000,
-//           });
-//         },
-//         (error) => {
-//           console.error("Error getting location:", error);
-//         }
-//       );
-//       console.log("watchId>>>> :", watchId);
-//       return () => navigator.geolocation.clearWatch(watchId);
-//     }
-//     // Clean up the watch position
-//   }, []);
-
-//   // const [markerIndex, setMarkerIndex] = useState(0);
-
-//   // useEffect(() => {
-//   //   if (routeCoords?.length === 0) return;
-
-//   //   const interval = setInterval(() => {
-//   //     setMarkerIndex((prev) => {
-//   //       //set marker index depending on rouecord small or big
-//   //       if (prev < routeCoords?.length - 1) {
-//   //         return prev + 1;
-//   //       } else {
-//   //         clearInterval(interval); //clear interval
-//   //         return prev;
-//   //       }
-//   //     });
-//   //   }, 100);
-
-//   //   return () => clearInterval(interval);
-//   // }, [routeCoords]);
-
-//   return (
-//     <>
-//       <div>
-//         <div ref={markerRef} style={{ width: "100%", height: "500px" }}></div>
-//         {/* {routeCoords?.length > 0 && markerIndex < routeCoords.length && (
-//           <Marker
-//             longitude={routeCoords[markerIndex][0]}
-//             latitude={routeCoords[markerIndex][1]}
-//           >
-//             <Room style={{ fontSize: 20, color: "blue" }} />
-//           </Marker>
-//         )} */}
-//       </div>
-//     </>
-//   );
-// };
-
-// export default MapLocation;
-
 //>>old app
 // import React, { useEffect, useState } from "react";
 // import Map, {
@@ -396,9 +269,202 @@
 // };
 
 // export default App;
+//>>>
+// import { useEffect, useRef, useState } from "react";
+// import Map, {
+//   GeolocateControl,
+//   Marker,
+//   NavigationControl,
+//   Source,
+//   Layer,
+// } from "react-map-gl";
+// import { Room } from "@mui/icons-material";
+// import "mapbox-gl/dist/mapbox-gl.css";
+// import { TOKEN } from "./config"; // Your Mapbox token import
 
-{
-  /*mapbox://styles/jay001/cmac3lvo600n301s45q2380v6
-// mapstyle-https://api.mapbox.com/styles/v1/jay001/cmac3lvo600n301s45q2380v6.html?title=view&access_token=pk.eyJ1IjoiamF5MDAxIiwiYSI6ImNtYWMxdGl5OTI3NG8ya3NibDNxbWFxbW8ifQ.Dnj5BcnOy36tvKY0AHrlvA&zoomwheel=true&fresh=true#2/38/-34
-//  */
-}
+// function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
+//   const R = 6371000;
+//   const dLat = ((lat2 - lat1) * Math.PI) / 180;
+//   const dLon = ((lon2 - lon1) * Math.PI) / 180;
+//   const a =
+//     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+//     Math.cos((lat1 * Math.PI) / 180) *
+//       Math.cos((lat2 * Math.PI) / 180) *
+//       Math.sin(dLon / 2) *
+//       Math.sin(dLon / 2);
+//   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+//   return R * c;
+// }
+
+// const App = () => {
+//   const [newdestination, setNewDestination] = useState(null);
+//   const [userlocation, setUserLocation] = useState(null);
+//   const [pathCoords, setPathCoords] = useState([]);
+//   const [totalDistance, setTotalDistance] = useState(0);
+//   const [startTime, setStartTime] = useState(null);
+//   const [elapsedTime, setElapsedTime] = useState(0);
+
+//   const [viewPort, setViewPort] = useState({
+//     latitude: 20,
+//     longitude: 75,
+//     zoom: 3,
+//   });
+
+//   useEffect(() => {
+//     if (!navigator.geolocation) {
+//       console.warn("Geolocation not supported.");
+//       return;
+//     }
+
+//     const watchId = navigator.geolocation.watchPosition(
+//       (position) => {
+//         const { latitude, longitude } = position.coords;
+
+//         if (!startTime) {
+//           setStartTime(Date.now());
+//         }
+
+//         setUserLocation({ latitude, longitude });
+
+//         setPathCoords((prevCoords) => {
+//           const newCoord = [longitude, latitude];
+
+//           if (prevCoords.length > 0) {
+//             const [prevLng, prevLat] = prevCoords[prevCoords.length - 1];
+//             const segmentDistance = getDistanceFromLatLonInMeters(
+//               prevLat,
+//               prevLng,
+//               latitude,
+//               longitude
+//             );
+//             setTotalDistance((prev) => prev + segmentDistance);
+//           }
+
+//           return [...prevCoords, newCoord];
+//         });
+//       },
+//       (error) => console.error("Geolocation error:", error),
+//       {
+//         enableHighAccuracy: true,
+//         maximumAge: 0,
+//         timeout: 5000,
+//       }
+//     );
+
+//     return () => navigator.geolocation.clearWatch(watchId);
+//   }, [startTime]);
+
+//   useEffect(() => {
+//     if (!startTime) return;
+
+//     const interval = setInterval(() => {
+//       setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+//     }, 1000);
+
+//     return () => clearInterval(interval);
+//   }, [startTime]);
+
+//   const formatDuration = (seconds) => {
+//     const mins = Math.floor(seconds / 60)
+//       .toString()
+//       .padStart(2, "0");
+//     const secs = (seconds % 60).toString().padStart(2, "0");
+//     return `${mins}:${secs}`;
+//   };
+
+//   return (
+//     <div style={{ width: "100vw", height: "100vh" }}>
+//       <Map
+//         id="route"
+//         mapboxAccessToken={TOKEN}
+//         initialViewState={viewPort}
+//         mapStyle="mapbox://styles/jay001/cmac3lvo600n301s45q2380v6"
+//         style={{ width: "100vw", height: "100vh", zIndex: 999 }}
+//         onMove={(evt) => setViewPort(evt.viewState)}
+//       >
+//         <GeolocateControl
+//           position="top-right"
+//           showUserLocation={true}
+//           trackUserLocation={true}
+//           onGeolocate={(pos) => {
+//             const { latitude, longitude } = pos.coords;
+//             setUserLocation({ latitude, longitude });
+//             setViewPort((prev) => ({
+//               ...prev,
+//               latitude,
+//               longitude,
+//               zoom: 10,
+//               transitionDuration: 1000,
+//             }));
+//           }}
+//         />
+
+//         <NavigationControl position="bottom-right" />
+
+//         {/* Walking path line */}
+//         {pathCoords.length > 1 && (
+//           <Source
+//             id="user-path"
+//             type="geojson"
+//             data={{
+//               type: "Feature",
+//               geometry: {
+//                 type: "LineString",
+//                 coordinates: pathCoords,
+//               },
+//             }}
+//           >
+//             <Layer
+//               id="line-layer"
+//               type="line"
+//               paint={{
+//                 "line-color": "#3b9ddd",
+//                 "line-width": 4,
+//                 "line-opacity": 0.75,
+//               }}
+//             />
+//           </Source>
+//         )}
+
+//         {/* Info box */}
+//         {userlocation && (
+//           <div
+//             style={{
+//               position: "absolute",
+//               top: 10,
+//               right: 10,
+//               backgroundColor: "white",
+//               padding: "10px",
+//               borderRadius: "6px",
+//               fontSize: "12px",
+//               zIndex: 1000,
+//               boxShadow: "0 0 5px rgba(0,0,0,0.3)",
+//               minWidth: "150px",
+//             }}
+//           >
+//             <div>
+//               <strong>Lat:</strong> {userlocation.latitude.toFixed(6)}
+//             </div>
+//             <div>
+//               <strong>Lng:</strong> {userlocation.longitude.toFixed(6)}
+//             </div>
+//             <div>
+//               <strong>Distance:</strong> {totalDistance.toFixed(2)} m
+//             </div>
+//             <div>
+//               <strong>Time:</strong> {formatDuration(elapsedTime)}
+//             </div>
+//           </div>
+//         )}
+
+//         {newdestination && (
+//           <Marker latitude={newdestination[1]} longitude={newdestination[0]}>
+//             <Room style={{ fontSize: 30, color: "red" }} />
+//           </Marker>
+//         )}
+//       </Map>
+//     </div>
+//   );
+// };
+
+// export default App;

@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useMapsLibrary, useMap } from "@vis.gl/react-google-maps";
 
 const Directions = ({ origin, destination }) => {
+  
   const [directions, setDirections] = useState(null);
-  console.log("directions :", directions);
 
   const map = useMap();
   const maps = useMapsLibrary("routes");

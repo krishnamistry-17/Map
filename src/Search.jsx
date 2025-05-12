@@ -9,6 +9,7 @@ const Search = () => {
   const mapContainerRef = useRef(null);
 
   const mapInstanceRef = useRef(null);
+  
   const [mapLoaded, setMapLoaded] = useState(false);
   const [inputValue, setInputValue] = useState("");
 

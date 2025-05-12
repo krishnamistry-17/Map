@@ -10,7 +10,7 @@ const MapWithGeocoder = () => {
   const mapContainerRef = useRef();
   const mapInstanceRef = useRef();
 
-  const [, setMapLoaded] = useState(false);
+  const [setMapLoaded] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
   useEffect(() => {
@@ -19,7 +19,7 @@ const MapWithGeocoder = () => {
     mapInstanceRef.current = new mapboxgl.Map({
       container: mapContainerRef.current, // container ID
       center: [75, 20], // starting position [lng, lat]
-      zoom: 9, // starting zoom
+      zoom: 3, // starting zoom
     });
 
     mapInstanceRef.current.on("load", () => {

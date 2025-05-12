@@ -10,6 +10,7 @@ import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 const MapLocation = () => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
+
   const [lng, setLng] = useState();
   const [lat, setLat] = useState();
 
@@ -38,7 +39,7 @@ const MapLocation = () => {
       const geocoder = new MapboxGeocoder({
         accessToken: TOKEN,
         mapboxgl: mapboxgl,
-        marker: true, // Adds a marker at the searched location
+        marker: true,
       });
 
       map.addControl(geocoder, "top-left");

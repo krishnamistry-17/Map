@@ -1,152 +1,65 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Map, {
   GeolocateControl,
-  Layer,
   Marker,
   NavigationControl,
   Source,
+  Layer,
 } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import Room from "@mui/icons-material/Room";
-
-// import MapWithGeocoder from "./MapWithGeoCoder";
 
 const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 const App = () => {
-  // const mapRef = useRef(null);
-  const [newdestination, setNewDestination] = useState(null);
+  const [userlocation, setUserLocation] = useState(null);
+  const [pathCoords, setPathCoords] = useState([]);
+  const [distance, setDistance] = useState(null);
+  const [duration, setDuration] = useState(null);
 
-  // console.log("newdestination :", newdestination);
-
-  // const [newplace, setNewPlace] = useState({
-  //   lat: 23.103683,
-  //   long: 78.962883,
-  //   zoom: 3,
-  // });
-
-  // const [distance, setDistance] = useState(null);
-  // const [duration, setDuration] = useState(null);
-
-  const [userlocation, setUserLocation] = useState();
-
-  // const [routeCoords, setRouteCoords] = useState(null);
-  // console.log("routeCoords :", routeCoords);
-
-  //driving-direction Api
-  // useEffect(() => {
-  //   const getRouteInfo = async () => {
-  //     if (!newdestination) return;
-  //     //mapbox-driving-direction  Api
-  //     const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${origin[0]},${origin[1]};${newdestination[0]},${newdestination[1]}?geometries=geojson&access_token=${TOKEN}`;
-
-  //     try {
-  //       const response = await axios.get(url);
-  //       const route = response.data.routes[0];
-
-  //       const distanceInKm = route.distance / 1000;
-  //       const durationInMin = route.duration / 60;
-
-  //       setDistance(distanceInKm.toFixed(2));
-  //       setDuration(durationInMin.toFixed(2));
-
-  //       // setRouteCoords(route.geometry.coordinates); // Save the full route coordinates
-  //     } catch (error) {
-  //       console.error("Failed to fetch route info:", error);
-  //     }
-  //   };
-
-  //   getRouteInfo();
-  // }, [newdestination]);
-
-  // const [markerIndex, setMarkerIndex] = useState(0);
-  // console.log("markerIndex :", markerIndex);
-
-  // useEffect(() => {
-  //   if (routeCoords?.length === 0) return;
-
-  //   const interval = setInterval(() => {
-  //     setMarkerIndex((prev) => {
-  //       //set marker index depending on rouecord small or big
-  //       if (prev < routeCoords?.length - 1) {
-  //         return prev + 1;
-  //       } else {
-  //         clearInterval(interval); //clear interval
-  //         return prev;
-  //       }
-  //     });
-  //   }, 100);
-
-  //   return () => clearInterval(interval);
-  // }, [routeCoords]);
+  console.log("pathCoords>>>> :", pathCoords);
 
   const [viewPort, setViewPort] = useState({
     latitude: 20,
-    longitude: 75,
+    longitude: 72,
     zoom: 3,
   });
 
-  // useEffect(() => {
-  //   if (!mapRef.current) return;
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      console.warn("Geolocation is not supported by this browser.");
+      return;
+    }
 
-  //   const map = mapRef.current.getMap(); // Access actual Mapbox instance
-  //   const geocoder = new MapboxGeocoder({
-  //     accessToken: TOKEN,
-  //     mapboxgl: mapboxgl,
-  //     marker: true,
-  //     placeholder: "Search for places",
-  //   });
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
 
-  //   map.addControl(geocoder, "top-left");
+        // Update user location
+        setUserLocation({ latitude, longitude });
 
-  //   geocoder.on("result", (e) => {
-  //     const coords = e.result.geometry.coordinates;
-  //     console.log("Selected:", coords);
-  //     setViewPort((prev) => ({
-  //       ...prev,
-  //       longitude: coords[0],
-  //       latitude: coords[1],
-  //       zoom: 10,
-  //     }));
-  //   });
+        setPathCoords((prev) => [...prev, [longitude, latitude]]);
+      },
+      (error) => {
+        console.error("Error getting location updates:", error);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 5000,
+      }
+    );
 
-  //   return () => {
-  //     map.removeControl(geocoder);
-  //   };
-  // }, []);
-
-  // const origin = [72.831062, 21.17024]; //india-surat
-
-  //   /*route*/
-  // Lat:21.2235218
-  // Lng: 72.8020522
-
-  // const routeGeoJSON = newdestination
-  //   ? {
-  //       type: "Feature",
-  //       properties: {},
-  //       geometry: {
-  //         type: "LineString",
-  //         coordinates: [origin, newdestination],
-  //       },
-  //     }
-  //   : null;
-
-  // const handleClick = (e) => {
-  //   const { lng, lat } = e.lngLat;
-  //   setNewDestination([lng, lat]);
-  // };
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <Map
-        // ref={mapRef}
         id="route"
         mapboxAccessToken={TOKEN}
         initialViewState={viewPort}
         mapStyle="mapbox://styles/jay001/cmac3lvo600n301s45q2380v6"
         style={{ width: "100vw", height: "100vh", zIndex: 999 }}
-        // onDblClick={handleClick}
         onMove={(evt) => setViewPort(evt.viewState)}
       >
         <GeolocateControl
@@ -155,13 +68,7 @@ const App = () => {
           trackUserLocation={true}
           onGeolocate={(pos) => {
             const { longitude, latitude } = pos.coords;
-            setUserLocation({
-              latitude: pos.coords.latitude,
-              longitude: pos.coords.longitude,
-            });
-
-            // console.log(" latitude>>>>>>user :", latitude);
-            // console.log("longitude: >>>>user:", longitude);
+            setUserLocation({ latitude, longitude });
 
             setViewPort((prev) => ({
               ...prev,
@@ -173,10 +80,34 @@ const App = () => {
           }}
         />
 
-        {/* <MapWithGeocoder /> */}
+        <NavigationControl position="top-right" />
 
-        <NavigationControl position="bottom-right" />
+        {/* Walking path line */}
+        {pathCoords.length > 1 && (
+          <Source
+            id="user-path"
+            type="geojson"
+            data={{
+              type: "Feature",
+              geometry: {
+                type: "LineString",
+                coordinates: pathCoords,
+              },
+            }}
+          >
+            <Layer
+              id="line-layer"
+              type="line"
+              paint={{
+                "line-color": "#3b9ddd",
+                "line-width": 6,
+                "line-opacity": 0.75,
+              }}
+            />
+          </Source>
+        )}
 
+        {/* User coordinates display */}
         {userlocation && (
           <div
             style={{
@@ -200,61 +131,6 @@ const App = () => {
             </div>
           </div>
         )}
-
-        {/* {routeGeoJSON && (
-          <Source id="route" type="geojson" data={routeGeoJSON}>
-            <Layer
-              id="route-line"
-              type="line"
-              paint={{
-                "line-color": "#3b9ddd",
-                "line-width": 5,
-              }}
-            />
-          </Source>
-        )} */}
-
-        {newdestination && (
-          <Marker latitude={newdestination[1]} longitude={newdestination[0]}>
-            <Room style={{ fontSize: 30, color: "red" }} />
-          </Marker>
-        )}
-
-        {/* Origin /*surat-lat-21.170240,long-72.831062 */}
-        {/* <Marker latitude={21.17024} longitude={72.831062}>
-          <Room style={{ fontSize: 30, color: "green" }} />
-        </Marker> */}
-
-        {/* {distance && duration && (
-          <div
-            style={{
-              position: "absolute",
-              top: 15,
-              left: 15,
-              background: "white",
-              padding: "15px",
-              borderRadius: "8px",
-              color: "red",
-              zIndex: 1000,
-            }}
-          >
-            <div style={{ fontSize: "13px" }}>
-              <strong>Distance:</strong> {distance} km
-            </div>
-            <div style={{ paddingTop: "8px", fontSize: "13px" }}>
-              <strong>Duration:</strong> {duration} minutes
-            </div>
-          </div>
-        )} */}
-
-        {/* {routeCoords?.length > 0 && markerIndex < routeCoords.length && (
-          <Marker
-            longitude={routeCoords[markerIndex][0]}
-            latitude={routeCoords[markerIndex][1]}
-          >
-            <Room style={{ fontSize: 20, color: "blue" }} />
-          </Marker>
-        )} */}
       </Map>
     </div>
   );
