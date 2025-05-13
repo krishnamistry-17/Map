@@ -11,7 +11,6 @@ import mapboxgl from "mapbox-gl";
 const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 //make a cluster layer and define type and paints
-
 const clusterLayer = {
   id: "clusters",
   type: "circle",
@@ -32,7 +31,6 @@ const clusterLayer = {
 };
 
 //make cluster count layer that define source and layout
-
 const clusterCountLayer = {
   id: "cluster-count",
   type: "symbol",
@@ -64,6 +62,7 @@ const App = () => {
   const [userlocation, setUserLocation] = useState(null);
   const [pathCoords, setPathCoords] = useState([]);
   const [earthquakeData, setEarthquakeData] = useState([]);
+
   const mapRef = useRef();
   const [viewPort, setViewPort] = useState({
     latitude: 20,

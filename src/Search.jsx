@@ -9,7 +9,7 @@ const Search = () => {
   const mapContainerRef = useRef(null);
 
   const mapInstanceRef = useRef(null);
-  
+
   const [mapLoaded, setMapLoaded] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
@@ -22,6 +22,7 @@ const Search = () => {
     if (mapContainerRef.current) {
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
+        accessToken: { TOKEN },
         style: "mapbox://styles/jay001/cmac3lvo600n301s45q2380v6",
         center: [lng, lat],
         zoom: zoom,
