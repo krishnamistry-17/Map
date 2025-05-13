@@ -7,19 +7,66 @@ import Map, {
   Layer,
 } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-
+import mapboxgl from "mapbox-gl";
 const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+
+const clusterLayer = {
+  id: "clusters",
+  type: "circle",
+  source: "earthquakes",
+  filter: ["has", "point_count"],
+  paint: {
+    "circle-color": [
+      "step",
+      ["get", "point_count"],
+      "#51bbd6",
+      100,
+      "#f1f075",
+      750,
+      "#f28cb1",
+    ],
+    "circle-radius": ["step", ["get", "point_count"], 20, 100, 30, 750, 40],
+  },
+};
+
+const clusterCountLayer = {
+  id: "cluster-count",
+  type: "symbol",
+  source: "earthquakes",
+  filter: ["has", "point_count"],
+  layout: {
+    "text-field": ["get", "point_count_abbreviated"],
+    "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+    "text-size": 12,
+  },
+};
+
+const unclusteredPointLayer = {
+  id: "unclustered-point",
+  type: "circle",
+  source: "earthquakes",
+  filter: ["!", ["has", "point_count"]],
+  paint: {
+    "circle-color": "#11b4da",
+    "circle-radius": 4,
+    "circle-stroke-width": 1,
+    "circle-stroke-color": "#fff",
+  },
+};
 
 const App = () => {
   const [userlocation, setUserLocation] = useState(null);
   const [pathCoords, setPathCoords] = useState([]);
+  const [earthquakeData, setEarthquakeData] = useState([]);
 
+  const mapRef = useRef();
   const [viewPort, setViewPort] = useState({
     latitude: 20,
     longitude: 72,
     zoom: 3,
   });
 
+  //watch user location using watchposition and coords
   useEffect(() => {
     if (!navigator.geolocation) {
       console.warn("Geolocation is not supported by this browser.");
@@ -47,6 +94,13 @@ const App = () => {
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
+  // add the clustering for earthquakes
+  useEffect(() => {
+    fetch("https://docs.mapbox.com/mapbox-gl-js/assets/earthquakes.geojson")
+      .then((res) => res.json())
+      .then((data) => setEarthquakeData(data));
+  }, []);
+
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <Map
@@ -56,7 +110,61 @@ const App = () => {
         mapStyle="mapbox://styles/jay001/cmac3lvo600n301s45q2380v6"
         style={{ width: "100vw", height: "100vh", zIndex: 999 }}
         onMove={(evt) => setViewPort(evt.viewState)}
+        interactiveLayerIds={["clusters", "unclustered-point"]}
+        onClick={(event) => {
+          console.log("Click event:", event);
+          console.log("Features:", event.features); // Should not be undefined
+          const feature = event.features?.[0];
+
+          if (!feature) return;
+
+          if (feature.layer.id === "clusters") {
+            const clusterId = feature.properties.cluster_id;
+            const mapboxSource = event.target.getSource("earthquakes");
+            mapboxSource.getClusterExpansionZoom(clusterId, (err, zoom) => {
+              if (err) return;
+
+              event.target.easeTo({
+                center: feature.geometry.coordinates,
+                zoom,
+                duration: 500,
+              });
+            });
+          } else if (feature.layer.id === "unclustered-point") {
+            const coordinates = feature.geometry.coordinates.slice();
+            const mag = feature.properties.mag;
+            const tsunami = feature.properties.tsunami === 1 ? "Yes" : "No";
+
+            new mapboxgl.Popup()
+              .setLngLat(coordinates)
+              .setHTML(`Magnitude: ${mag}<br>Was there a tsunami?: ${tsunami}`)
+              .addTo(event.target);
+          }
+        }}
       >
+        {earthquakeData && (
+          <div
+            style={{
+              backgroundColor: "white",
+              color: "black",
+              padding: "8px",
+              borderRadius: "5px",
+            }}
+          >
+            <Source
+              id="earthquakes"
+              type="geojson"
+              data={earthquakeData}
+              cluster={true}
+              clusterMaxZoom={14}
+              clusterRadius={50}
+            >
+              <Layer {...clusterLayer} />
+              <Layer {...clusterCountLayer} />
+              <Layer {...unclusteredPointLayer} />
+            </Source>
+          </div>
+        )}
         <GeolocateControl
           position="top-right"
           showUserLocation={true}
@@ -64,7 +172,6 @@ const App = () => {
           onGeolocate={(pos) => {
             const { longitude, latitude } = pos.coords;
             setUserLocation({ latitude, longitude });
-
             setViewPort((prev) => ({
               ...prev,
               latitude,
