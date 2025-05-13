@@ -10,6 +10,8 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import mapboxgl from "mapbox-gl";
 const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
+//make a cluster layer and define type and paints
+
 const clusterLayer = {
   id: "clusters",
   type: "circle",
@@ -29,6 +31,8 @@ const clusterLayer = {
   },
 };
 
+//make cluster count layer that define source and layout
+
 const clusterCountLayer = {
   id: "cluster-count",
   type: "symbol",
@@ -40,6 +44,8 @@ const clusterCountLayer = {
     "text-size": 12,
   },
 };
+
+//make unclustered point layer that define source and paint
 
 const unclusteredPointLayer = {
   id: "unclustered-point",
@@ -58,7 +64,6 @@ const App = () => {
   const [userlocation, setUserLocation] = useState(null);
   const [pathCoords, setPathCoords] = useState([]);
   const [earthquakeData, setEarthquakeData] = useState([]);
-
   const mapRef = useRef();
   const [viewPort, setViewPort] = useState({
     latitude: 20,
@@ -101,6 +106,12 @@ const App = () => {
       .then((data) => setEarthquakeData(data));
   }, []);
 
+  useEffect(() => {
+    fetch("")
+      .then((res) => res.json())
+      .catch((data) => setEarthquakeData(data));
+  });
+
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <Map
@@ -113,7 +124,7 @@ const App = () => {
         interactiveLayerIds={["clusters", "unclustered-point"]}
         onClick={(event) => {
           console.log("Click event:", event);
-          console.log("Features:", event.features); // Should not be undefined
+          console.log("Features:", event.features);
           const feature = event.features?.[0];
 
           if (!feature) return;
@@ -148,7 +159,9 @@ const App = () => {
               backgroundColor: "white",
               color: "black",
               padding: "8px",
-              borderRadius: "5px",
+              borderRadius: "9px",
+              fontSize: "17px",
+              fontStyle: "normal",
             }}
           >
             <Source
@@ -239,9 +252,3 @@ const App = () => {
 };
 
 export default App;
-
-{
-  /*mapbox://styles/jay001/cmac3lvo600n301s45q2380v6
-// mapstyle-https://api.mapbox.com/styles/v1/jay001/cmac3lvo600n301s45q2380v6.html?title=view&access_token=pk.eyJ1IjoiamF5MDAxIiwiYSI6ImNtYWMxdGl5OTI3NG8ya3NibDNxbWFxbW8ifQ.Dnj5BcnOy36tvKY0AHrlvA&zoomwheel=true&fresh=true#2/38/-34
-//  */
-}
