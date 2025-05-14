@@ -8,6 +8,11 @@ import Map, {
 } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import mapboxgl from "mapbox-gl";
+import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
+//css
+import "mapbox-gl/dist/mapbox-gl.css";
+import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
+
 const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 //make a cluster layer and define type and paints
@@ -59,11 +64,12 @@ const unclusteredPointLayer = {
 };
 
 const App = () => {
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+
   const [userlocation, setUserLocation] = useState(null);
   const [pathCoords, setPathCoords] = useState([]);
   const [earthquakeData, setEarthquakeData] = useState([]);
-
-  const mapRef = useRef();
   const [viewPort, setViewPort] = useState({
     latitude: 20,
     longitude: 72,
@@ -106,14 +112,33 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    fetch("")
-      .then((res) => res.json())
-      .catch((data) => setEarthquakeData(data));
-  });
+    if (mapContainerRef.current) {
+      const map = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: "mapbox://styles/jay001/cmac3lvo600n301s45q2380v6",
+        center: [72, 20],
+        zoom: 3,
+      });
+      mapInstanceRef.current = map;
+      const geocoder = new MapboxGeocoder({
+        accessToken: TOKEN,
+        mapboxgl: mapboxgl,
+        placeholder: "Search place",
+        marker: {
+          color: "orange",
+        },
+      });
+      map.addControl(geocoder, "top-left");
+      return () => {
+        map.remove();
+      };
+    }
+  }, []);
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <Map
+        ref={mapContainerRef}
         id="route"
         mapboxAccessToken={TOKEN}
         initialViewState={viewPort}
@@ -153,16 +178,7 @@ const App = () => {
         }}
       >
         {earthquakeData && (
-          <div
-            style={{
-              backgroundColor: "white",
-              color: "black",
-              padding: "8px",
-              borderRadius: "9px",
-              fontSize: "17px",
-              fontStyle: "normal",
-            }}
-          >
+          <div>
             <Source
               id="earthquakes"
               type="geojson"
