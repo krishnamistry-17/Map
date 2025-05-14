@@ -8,11 +8,12 @@ import Map, {
 import "mapbox-gl/dist/mapbox-gl.css";
 import mapboxgl from "mapbox-gl";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import * as turf from "@turf/turf";
 //css
 import "mapbox-gl/dist/mapbox-gl.css";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
-import MapboxDraw from "@mapbox/mapbox-gl-draw";
-import * as turf from "@turf/turf";
+import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 
 const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -112,35 +113,53 @@ const App = () => {
       .then((data) => setEarthquakeData(data));
   }, []);
 
+  //draw polygon and calculate area using turf
+  //polygon tool and delete tool
   useEffect(() => {
+    if (!mapRef.current) return;
+
     const draw = new MapboxDraw({
       displayControlsDefault: false,
       controls: {
         polygon: true,
         trash: true,
       },
-      defaultMode: "draw_polygone",
+      defaultMode: "draw_polygon",
     });
-    mapRef.current.addControl(draw);
-    mapRef.current.on("draw.create", updateArea);
-    mapRef.current.on("draw.delete", updateArea);
+
+    const map = mapRef.current;
+
+    map.on("load", () => {
+      map.addControl(draw);
+
+      map.on("draw.create", updateArea);
+      map.on("draw.delete", updateArea);
+      map.on("draw.update", updateArea);
+    });
 
     function updateArea(e) {
       const data = draw.getAll();
-      if (draw.features.length > 0) {
+      if (data.features.length > 0) {
         const area = turf.area(data);
         setRoundArea(Math.round(area * 100) / 100);
       } else {
-        setRoundArea();
-        if (e.type !== "draw.delete") alert("Click to map to draw polygone");
+        setRoundArea(undefined);
+        if (e.type !== "draw.delete") alert("Click on map to draw polygon");
       }
     }
+
+    return () => {
+      map.removeControl(draw);
+      map.off("draw.create", updateArea);
+      map.off("draw.delete", updateArea);
+      map.off("draw.update", updateArea);
+    };
   }, []);
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <Map
-        ref={mapContainerRef}
+        ref={mapRef}
         id="route"
         mapboxAccessToken={TOKEN}
         initialViewState={viewPort}
@@ -161,8 +180,8 @@ const App = () => {
         }}
         interactiveLayerIds={["clusters", "unclustered-point"]}
         onClick={(event) => {
-          console.log("Click event:", event);
-          console.log("Features:", event.features);
+          // console.log("Click event:", event);
+          // console.log("Features:", event.features);
           const feature = event.features?.[0];
 
           if (!feature) return;
@@ -207,6 +226,7 @@ const App = () => {
             </Source>
           </div>
         )}
+
         <GeolocateControl
           position="top-right"
           showUserLocation={true}
@@ -250,6 +270,7 @@ const App = () => {
                     fontFamily: "Open Sans",
                     margin: 0,
                     fontSize: "13px ",
+                    color: "black",
                   }}
                 >
                   <strong>{roundArea}</strong>
@@ -259,6 +280,7 @@ const App = () => {
                     fontFamily: "Open Sans",
                     margin: 0,
                     fontSize: "13px ",
+                    color: "black",
                   }}
                 >
                   square meters
@@ -267,6 +289,7 @@ const App = () => {
             )}
           </div>
         </div>
+
         {/* Walking path line */}
         {pathCoords.length > 1 && (
           <Source
