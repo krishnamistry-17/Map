@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Map, {
   GeolocateControl,
-  Marker,
   NavigationControl,
   Source,
   Layer,
@@ -12,6 +11,8 @@ import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 //css
 import "mapbox-gl/dist/mapbox-gl.css";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import * as turf from "@turf/turf";
 
 const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -65,10 +66,12 @@ const unclusteredPointLayer = {
 
 const App = () => {
   const mapContainerRef = useRef(null);
-
+  const mapRef = useRef();
   const [userlocation, setUserLocation] = useState(null);
   const [pathCoords, setPathCoords] = useState([]);
   const [earthquakeData, setEarthquakeData] = useState([]);
+  const [roundArea, setRoundArea] = useState();
+
   const [viewPort, setViewPort] = useState({
     latitude: 20,
     longitude: 72,
@@ -81,7 +84,6 @@ const App = () => {
       console.warn("Geolocation is not supported by this browser.");
       return;
     }
-
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
@@ -108,6 +110,31 @@ const App = () => {
     fetch("https://docs.mapbox.com/mapbox-gl-js/assets/earthquakes.geojson")
       .then((res) => res.json())
       .then((data) => setEarthquakeData(data));
+  }, []);
+
+  useEffect(() => {
+    const draw = new MapboxDraw({
+      displayControlsDefault: false,
+      controls: {
+        polygon: true,
+        trash: true,
+      },
+      defaultMode: "draw_polygone",
+    });
+    mapRef.current.addControl(draw);
+    mapRef.current.on("draw.create", updateArea);
+    mapRef.current.on("draw.delete", updateArea);
+
+    function updateArea(e) {
+      const data = draw.getAll();
+      if (draw.features.length > 0) {
+        const area = turf.area(data);
+        setRoundArea(Math.round(area * 100) / 100);
+      } else {
+        setRoundArea();
+        if (e.type !== "draw.delete") alert("Click to map to draw polygone");
+      }
+    }
   }, []);
 
   return (
@@ -199,6 +226,47 @@ const App = () => {
 
         <NavigationControl position="top-right" />
 
+        <div
+          className="calculation-box"
+          style={{
+            height: 75,
+            width: 150,
+            position: "absolute",
+            bottom: 40,
+            left: 10,
+            backgroundColor: "rgba(255, 255, 255, 0.9)",
+            padding: 15,
+            textAlign: "center",
+          }}
+        >
+          <p style={{ fontFamily: "Open Sans", margin: 0, fontSize: "13px " }}>
+            Click the map to draw a polygon.
+          </p>
+          <div id="calculated-area">
+            {roundArea && (
+              <>
+                <p
+                  style={{
+                    fontFamily: "Open Sans",
+                    margin: 0,
+                    fontSize: "13px ",
+                  }}
+                >
+                  <strong>{roundArea}</strong>
+                </p>
+                <p
+                  style={{
+                    fontFamily: "Open Sans",
+                    margin: 0,
+                    fontSize: "13px ",
+                  }}
+                >
+                  square meters
+                </p>
+              </>
+            )}
+          </div>
+        </div>
         {/* Walking path line */}
         {pathCoords.length > 1 && (
           <Source
