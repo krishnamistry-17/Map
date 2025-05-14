@@ -65,7 +65,6 @@ const unclusteredPointLayer = {
 
 const App = () => {
   const mapContainerRef = useRef(null);
-  const mapInstanceRef = useRef(null);
 
   const [userlocation, setUserLocation] = useState(null);
   const [pathCoords, setPathCoords] = useState([]);
@@ -111,30 +110,6 @@ const App = () => {
       .then((data) => setEarthquakeData(data));
   }, []);
 
-  useEffect(() => {
-    if (mapContainerRef.current) {
-      const map = new mapboxgl.Map({
-        container: mapContainerRef.current,
-        style: "mapbox://styles/jay001/cmac3lvo600n301s45q2380v6",
-        center: [72, 20],
-        zoom: 3,
-      });
-      mapInstanceRef.current = map;
-      const geocoder = new MapboxGeocoder({
-        accessToken: TOKEN,
-        mapboxgl: mapboxgl,
-        placeholder: "Search place",
-        marker: {
-          color: "orange",
-        },
-      });
-      map.addControl(geocoder, "top-left");
-      return () => {
-        map.remove();
-      };
-    }
-  }, []);
-
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       <Map
@@ -145,6 +120,18 @@ const App = () => {
         mapStyle="mapbox://styles/jay001/cmac3lvo600n301s45q2380v6"
         style={{ width: "100vw", height: "100vh", zIndex: 999 }}
         onMove={(evt) => setViewPort(evt.viewState)}
+        onLoad={({ target }) => {
+          const map = target;
+          const geocoder = new MapboxGeocoder({
+            accessToken: TOKEN,
+            mapboxgl: mapboxgl,
+            placeholder: "Search location..",
+            marker: {
+              color: "orange",
+            },
+          });
+          map.addControl(geocoder, "top-left");
+        }}
         interactiveLayerIds={["clusters", "unclustered-point"]}
         onClick={(event) => {
           console.log("Click event:", event);
