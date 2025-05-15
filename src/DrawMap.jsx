@@ -15,47 +15,47 @@ const DrawMap = () => {
   const map = useRef(null);
   const draw = useRef(null);
 
-  useEffect(() => {
-    if (map.current) return;
+  //   onLoad={({ target: map }) => {
+  //   mapRef.current = map;
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/jay001/cmac3lvo600n301s45q2380v6",
-      center: [78, 22],
-      zoom: 4,
-    });
+  //   const geocoder = new MapboxGeocoder({
+  //     accessToken: TOKEN,
+  //     mapboxgl: mapboxgl,
+  //     placeholder: "Search location..",
+  //     marker: {
+  //       color: "orange",
+  //     },
+  //   });
 
-    draw.current = new MapboxDraw({
-      displayControlsDefault: false,
-      controls: {
-        polygon: true,
-        trash: true,
-      },
-      defaultMode: "draw_polygon",
-    });
+  //   map.addControl(geocoder, "top-left");
 
-    map.current.addControl(draw.current, "top-left");
+  //   // Initialize MapboxDraw
+  //   const draw = new MapboxDraw({
+  //     displayControlsDefault: false,
+  //     controls: {
+  //       polygon: true,
+  //       trash: true,
+  //     },
+  //     defaultMode: "draw_polygon",
+  //   });
 
-    map.current.on("draw.create", updateArea);
-    map.current.on("draw.update", updateArea);
-    map.current.on("draw.delete", updateArea);
+  //   map.addControl(draw);
 
-    function updateArea(e) {
-      const data = draw.current.getAll();
-      if (data.features.length > 0) {
-        const area = turf.area(data);
-        alert(`Area: ${Math.round(area)} m²`);
-      } else {
-        alert("Click the map to draw a polygon.");
-      }
-    }
+  //   const updateArea = (e) => {
+  //     const data = draw.getAll();
+  //     if (data.features.length > 0) {
+  //       const area = turf.area(data);
+  //       setRoundArea(Math.round(area * 100) / 100);
+  //     } else {
+  //       setRoundArea(undefined);
+  //       if (e.type !== "draw.delete") alert("Click on map to draw polygon");
+  //     }
+  //   };
 
-    return () => {
-      if (map.current) {
-        map.current.remove();
-      }
-    };
-  }, []);
+  //   map.on("draw.create", updateArea);
+  //   map.on("draw.delete", updateArea);
+  //   map.on("draw.update", updateArea);
+  // }};
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>

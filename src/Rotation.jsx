@@ -75,14 +75,14 @@ const styleOptions = {
 const App = () => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef();
-  const animationFrameRef = useRef(null);
   const [userlocation, setUserLocation] = useState(null);
   const [pathCoords, setPathCoords] = useState([]);
   const [earthquakeData, setEarthquakeData] = useState([]);
   const [heatData, setHeatData] = useState([]);
   const [roundArea, setRoundArea] = useState();
   const [viewMode, setViewMode] = useState();
-  const [isRotating, setIsRotating] = useState(true);
+  const [isRotating, setIsRotating] = useState();
+
   const [mapStyle, setMapStyle] = useState(styleOptions.Custom);
 
   const [viewPort, setViewPort] = useState({
@@ -143,26 +143,8 @@ const App = () => {
     const angle = (timestamp / 100) % 360;
     map.rotateTo(angle, { duration: 0 });
 
-    animationFrameRef.current = requestAnimationFrame(rotateCamera);
+    animationFrameId = requestAnimationFrame(rotateCamera);
   };
-
-  useEffect(() => {
-    if (isRotating) {
-      animationFrameRef.current = requestAnimationFrame(rotateCamera);
-    } else {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-    }
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-    };
-  }, [isRotating]);
 
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
@@ -331,9 +313,7 @@ const App = () => {
           );
 
           // Start camera rotation
-          mapRef.current.on("load", () => {
-            animationFrameRef.current = requestAnimationFrame(rotateCamera);
-          });
+
           rotateCamera(0);
 
           // Optional: Remove labels
@@ -604,14 +584,23 @@ const App = () => {
         <div
           style={{
             position: "absolute",
-            bottom: 150,
-            right: 10,
+            top: 120,
+            left: 10,
             zIndex: 1000,
+            backgroundColor: "white",
+            padding: "8px 12px",
+            borderRadius: "4px",
           }}
         >
           <button
-            style={{ backgroundColor: "white", color: "black" }}
-            onClick={() => setIsRotating((prev) => !prev)}
+            onClick={() => {
+              if (isRotating) {
+                cancelAnimationFrame(animationFrameId);
+              } else {
+                rotateCamera(performance.now()); // Resume rotation
+              }
+              setIsRotating(!isRotating);
+            }}
           >
             {isRotating ? "Pause Rotation" : "Resume Rotation"}
           </button>
