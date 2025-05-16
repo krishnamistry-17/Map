@@ -10,7 +10,6 @@ import mapboxgl from "mapbox-gl";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import * as turf from "@turf/turf";
-
 //css
 import "mapbox-gl/dist/mapbox-gl.css";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
@@ -76,20 +75,21 @@ const App = () => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef();
   const animationFrameRef = useRef(null);
+
   const [userlocation, setUserLocation] = useState(null);
   const [pathCoords, setPathCoords] = useState([]);
   const [earthquakeData, setEarthquakeData] = useState([]);
   const [heatData, setHeatData] = useState([]);
-  const [roundArea, setRoundArea] = useState();
   const [viewMode, setViewMode] = useState();
   const [isRotating, setIsRotating] = useState(true);
   const [mapStyle, setMapStyle] = useState(styleOptions.Custom);
-
+  const [roundArea, setRoundArea] = useState();
+  const [calLat, setCalLat] = useState();
+  const [calLng, setCalLng] = useState();
   const [viewPort, setViewPort] = useState({
     latitude: 20,
     longitude: 72,
     zoom: 2,
-    pitch: 5,
   });
 
   //watch user loca tion using watchposition and coords
@@ -133,11 +133,10 @@ const App = () => {
       .then((data) => setHeatData(data));
   });
 
-  //rotation
-
+  //rotation camera
   let animationFrameId = null;
   const rotateCamera = (timestamp) => {
-    if (!mapRef.current || !isRotating) return;
+    if (!mapRef.current || isRotating) return;
     const map = mapRef.current;
     // Rotate by time
     const angle = (timestamp / 100) % 360;
@@ -146,6 +145,7 @@ const App = () => {
     animationFrameRef.current = requestAnimationFrame(rotateCamera);
   };
 
+  //rotating
   useEffect(() => {
     if (isRotating) {
       animationFrameRef.current = requestAnimationFrame(rotateCamera);
@@ -174,6 +174,12 @@ const App = () => {
         mapStyle={mapStyle}
         style={{ width: "100vw", height: "100vh", zIndex: 999 }}
         onMove={(evt) => setViewPort(evt.viewState)}
+        dragPan={true}
+        scrollZoom={true}
+        boxZoom={true}
+        dragRotate={true}
+        keyboard={true}
+        touchZoomRotate={true}
         onLoad={({ target: map }) => {
           mapRef.current = map;
 
@@ -186,8 +192,7 @@ const App = () => {
           });
           map.addControl(geocoder, "top-left");
 
-          // Setup Mapbox Draw
-
+          // Setup Mapbox Draw to draw polygon
           const draw = new MapboxDraw({
             displayControlsDefault: false,
             controls: {
@@ -196,23 +201,38 @@ const App = () => {
             },
             defaultMode: "draw_polygon",
           });
-          map.addControl(draw, "top-right");
 
+          map.addControl(draw, "top-right");
+          //calculate area using turf
           const updateArea = (e) => {
             const data = draw.getAll();
             if (data.features.length > 0) {
               const area = turf.area(data);
               setRoundArea(Math.round(area * 100) / 100);
+              const coordinates = data.features[0].geometry.coordinates[0]; // calculate lat lng for polygon coordinate
+              console.log("Polygon coordinates>>:", coordinates);
             } else {
               setRoundArea(undefined);
               if (e.type !== "draw.delete")
                 alert("Click on map to draw polygon");
             }
           };
-
           map.on("draw.create", updateArea);
           map.on("draw.delete", updateArea);
           map.on("draw.update", updateArea);
+
+          //listeners used with on method- (move,click) also use rotate insted of move
+          map.on("move", () => {
+            console.log("Map is moving");
+          });
+
+          map.on("click", (e) => {
+            console.log(`Clicked at: ${e.lngLat.lng}, ${e.lngLat.lat}`);
+          });
+
+          map.on("rotateend", (e) => {
+            console.log("Rotation end");
+          });
 
           // Heatmap layer
           map.addLayer(
@@ -337,43 +357,43 @@ const App = () => {
           rotateCamera(0);
 
           // Optional: Remove labels
-          const layers = mapRef.current.getStyle().layers;
-          for (const layer of layers) {
-            if (layer.type === "symbol" && layer.layout["text-field"]) {
-              mapRef.current.removeLayer(layer.id);
-            }
-          }
-          // Add 3D buildings
-          mapRef.current.addLayer({
-            id: "3d-buildings",
-            source: "composite",
-            "source-layer": "building",
-            filter: ["==", "extrude", "true"],
-            type: "fill-extusion",
-            minzoom: 15,
-            paint: {
-              "fill-extrusion-color": "#aaa",
-              "fill-extrusion-height": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                15,
-                0,
-                15.05,
-                ["get", "height"],
-              ],
-              "fill-extrusion-base": [
-                "interpolate",
-                ["linear"],
-                ["zoom"],
-                15,
-                0,
-                15.05,
-                ["get", "min_height"],
-              ],
-              "fill-extrusion-opacity": 0.6,
-            },
-          });
+          // const layers = mapRef.current.getStyle().layers;
+          // for (const layer of layers) {
+          //   if (layer.type === "symbol" && layer.layout["text-field"]) {
+          //     mapRef.current.removeLayer(layer.id);
+          //   }
+          // }
+          // // Add 3D buildings
+          // mapRef.current.addLayer({
+          //   id: "3d-buildings",
+          //   source: "composite",
+          //   "source-layer": "building",
+          //   filter: ["==", "extrude", "true"],
+          //   type: "fill-extrusion",
+          //   minzoom: 15,
+          //   paint: {
+          //     "fill-extrusion-color": "#aaa",
+          //     "fill-extrusion-height": [
+          //       "interpolate",
+          //       ["linear"],
+          //       ["zoom"],
+          //       15,
+          //       0,
+          //       15.05,
+          //       ["get", "height"],
+          //     ],
+          //     "fill-extrusion-base": [
+          //       "interpolate",
+          //       ["linear"],
+          //       ["zoom"],
+          //       15,
+          //       0,
+          //       15.05,
+          //       ["get", "min_height"],
+          //     ],
+          //     "fill-extrusion-opacity": 0.6,
+          //   },
+          // });
         }}
         interactiveLayerIds={["clusters", "unclustered-point"]}
         onClick={(event) => {
@@ -552,7 +572,7 @@ const App = () => {
         <NavigationControl position="top-right" />
 
         {/*click button */}
-        <div
+        {/* <div
           style={{
             position: "absolute",
             bottom: 45,
@@ -575,7 +595,7 @@ const App = () => {
           >
             Click
           </button>
-        </div>
+        </div> */}
 
         {/*select map */}
         <div
@@ -601,7 +621,7 @@ const App = () => {
         </div>
 
         {/*pause button */}
-        <div
+        {/* <div
           style={{
             position: "absolute",
             bottom: 150,
@@ -615,7 +635,7 @@ const App = () => {
           >
             {isRotating ? "Pause Rotation" : "Resume Rotation"}
           </button>
-        </div>
+        </div> */}
 
         {/*calculation-box */}
         <div
